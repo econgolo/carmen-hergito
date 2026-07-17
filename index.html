@@ -17,9 +17,11 @@
     var el_d = document.getElementById('d');
     var el_h = document.getElementById('h');
     var el_m = document.getElementById('m');
+    var el_s = document.getElementById('s');
     if(el_d) el_d.textContent = Math.floor(dif/86400000);
     if(el_h) el_h.textContent = String(Math.floor(dif%86400000/3600000)).padStart(2,'0');
     if(el_m) el_m.textContent = String(Math.floor(dif%3600000/60000)).padStart(2,'0');
+    if(el_s) el_s.textContent = String(Math.floor(dif%60000/1000)).padStart(2,'0');
   }
   tique();
   setInterval(tique, 1000);
@@ -73,6 +75,7 @@ input:focus,textarea:focus,select:focus{border-color:#D4AF37!important;outline:n
     <div><div id="d" style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:44px;color:#C15E3F;line-height:1;">–</div><div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#6B5D4F;margin-top:8px;">Dias</div></div>
     <div><div id="h" style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:44px;color:#C15E3F;line-height:1;">–</div><div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#6B5D4F;margin-top:8px;">Horas</div></div>
     <div><div id="m" style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:44px;color:#C15E3F;line-height:1;">–</div><div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#6B5D4F;margin-top:8px;">Min</div></div>
+    <div><div id="s" style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:44px;color:#C15E3F;line-height:1;">–</div><div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#6B5D4F;margin-top:8px;">Seg</div></div>
   </div>
 </div>
 
@@ -107,13 +110,13 @@ input:focus,textarea:focus,select:focus{border-color:#D4AF37!important;outline:n
       </span>
       <span style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#6B5D4F;">Localização</span>
     </a>
-    <button onclick="document.getElementById('sec-rsvp').scrollIntoView({behavior:'smooth'})" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:14px;font-family:'Jost',sans-serif;">
+    <button onclick="toggleSection('sec-rsvp')" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:14px;font-family:'Jost',sans-serif;">
       <span style="width:clamp(56px,15vw,74px);height:clamp(56px,15vw,74px);border:1px solid #C15E3F;border-radius:50%;display:flex;align-items:center;justify-content:center;">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#8A6D3B" stroke-width="1.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       </span>
       <span style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#6B5D4F;">Confirmação</span>
     </button>
-    <button onclick="document.getElementById('sec-presentes').scrollIntoView({behavior:'smooth'})" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:14px;font-family:'Jost',sans-serif;">
+    <button onclick="toggleSection('sec-presentes')" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:14px;font-family:'Jost',sans-serif;">
       <span style="width:clamp(56px,15vw,74px);height:clamp(56px,15vw,74px);border:1px solid #C15E3F;border-radius:50%;display:flex;align-items:center;justify-content:center;">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#8A6D3B" stroke-width="1.3"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7S8 7 8 4a2 2 0 0 1 4 0 2 2 0 0 1 4 0c0 3-4 3-4 3z"/></svg>
       </span>
@@ -127,14 +130,14 @@ input:focus,textarea:focus,select:focus{border-color:#D4AF37!important;outline:n
 </div>
 
 <!-- PRESENTES (FIX 1: lua de mel última; FIX 2: dashboard de progresso por presente) -->
-<div id="sec-presentes" style="background:#F7E8DE;padding:36px 14px;margin-top:48px;text-align:center;animation:fadeUp 0.4s ease both;">
+<div id="sec-presentes" style="display:none;background:#F7E8DE;padding:36px 14px;margin-top:48px;text-align:center;animation:fadeUp 0.4s ease both;">
   <h2 style="font-family:'Cormorant Garamond',serif;font-weight:500;font-size:34px;margin:0 0 8px;color:#3D3229;">Lista de Presentes</h2>
   <p style="font-size:14px;color:#6B5D4F;max-width:440px;margin:0 auto 32px;line-height:1.6;padding:0 8px;">A vossa presença é o nosso maior presente. Se desejarem contribuir, escolham um artigo abaixo — podem oferecer a peça completa ou juntar-se numa contribuição.</p>
   <div id="presentesLista" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;max-width:560px;margin:0 auto;"></div>
 </div>
 
 <!-- RSVP (FIX 3: funciona com token + mensagem clara sem token) -->
-<div id="sec-rsvp" style="background:#F7E8DE;padding:44px 24px;margin-top:2px;text-align:center;animation:fadeUp 0.4s ease both;">
+<div id="sec-rsvp" style="display:none;background:#F7E8DE;padding:44px 24px;margin-top:2px;text-align:center;animation:fadeUp 0.4s ease both;">
   <h3 style="font-family:'Cormorant Garamond',serif;font-weight:500;font-size:30px;margin:0 0 18px;color:#3D3229;">Confirmação de Presença</h3>
   <p id="rsvpIntro" style="font-size:14px;color:#6B5D4F;max-width:400px;margin:0 auto 28px;line-height:1.7;">A verificar o teu convite…</p>
   <div id="rsvpForm" style="max-width:400px;margin:0 auto;display:none;flex-direction:column;gap:14px;">
@@ -220,6 +223,7 @@ async function carregarConvidado(){
 
   try {
     const { data, error } = await sb.rpc('validar_token', { p_token: token });
+    if(error){ console.error('[validar_token] erro:', error); }
     if(error || !data || !data.valido){
       intro.innerHTML = 'Não reconhecemos este convite. Confirma o link connosco.';
       return;
@@ -245,6 +249,7 @@ async function carregarConvidado(){
       mostrarToast('Já tens uma resposta registada — podes alterá-la.');
     }
   } catch(e){
+    console.error('[carregarConvidado] erro inesperado:', e);
     intro.textContent = 'Erro ao verificar o convite. Tenta de novo.';
   }
 }
@@ -299,7 +304,13 @@ function fotoFor(nome){
 }
 
 async function carregarPresentes(){
-  const { data } = await sb.from('presentes').select('*').order('ordem');
+  const { data, error } = await sb.from('presentes').select('*').order('ordem');
+  if(error){
+    console.error('[presentes] erro ao carregar:', error);
+    document.getElementById('presentesLista').innerHTML =
+      '<p style="font-size:13px;color:#C15E3F;grid-column:1/-1;">Não foi possível carregar a lista de presentes. Tenta novamente mais tarde.</p>';
+    return;
+  }
   if(data) renderPresentes(data);
 }
 
@@ -333,7 +344,7 @@ function renderPresentes(lista){
     // Info
     const info = document.createElement('div');
     info.style.cssText = 'border-top:1px solid #F0E6D8;padding:14px 12px 0;';
-    info.innerHTML = '<div style="font-family:'Cormorant Garamond',serif;font-size:19px;color:#3D3229;line-height:1.2;">'+esc(p.nome)+'</div>'
+    info.innerHTML = '<div style="font-family:\'Cormorant Garamond\',serif;font-size:19px;color:#3D3229;line-height:1.2;">'+esc(p.nome)+'</div>'
       + '<div style="font-size:13px;color:#C15E3F;margin-top:5px;letter-spacing:.5px;">'+(livre?'Qualquer valor':fmt(meta))+'</div>';
     card.appendChild(info);
 
@@ -433,6 +444,17 @@ async function submeterReserva(){
 sb.channel('presentes-live')
   .on('postgres_changes', { event:'*', schema:'public', table:'presentes' }, carregarPresentes)
   .subscribe();
+
+// Mostra/esconde as secções Presentes e Confirmação ao clicar nos ícones
+function toggleSection(id){
+  const outroId = id === 'sec-rsvp' ? 'sec-presentes' : 'sec-rsvp';
+  const el = document.getElementById(id);
+  const outro = document.getElementById(outroId);
+  const estaAberta = el.style.display === 'block';
+  outro.style.display = 'none';
+  el.style.display = estaAberta ? 'none' : 'block';
+  if(!estaAberta) el.scrollIntoView({ behavior:'smooth', block:'start' });
+}
 
 function esc(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function mostrarToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),3200); }
