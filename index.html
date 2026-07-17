@@ -7,6 +7,24 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+
+<!-- CONTAGEM: script independente, sem Supabase, corre imediatamente -->
+<script>
+(function(){
+  var alvoTs = new Date('2026-10-31T13:00:00+02:00').getTime();
+  function tique(){
+    var dif = Math.max(0, alvoTs - Date.now());
+    var el_d = document.getElementById('d');
+    var el_h = document.getElementById('h');
+    var el_m = document.getElementById('m');
+    if(el_d) el_d.textContent = Math.floor(dif/86400000);
+    if(el_h) el_h.textContent = String(Math.floor(dif%86400000/3600000)).padStart(2,'0');
+    if(el_m) el_m.textContent = String(Math.floor(dif%3600000/60000)).padStart(2,'0');
+  }
+  tique();
+  setInterval(tique, 1000);
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -187,14 +205,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let convidado = null, respostaSel = null, modalPresente = null;
 
 // --- Contagem ---
-const ALVO_DATA = new Date('2026-10-31T13:00:00+02:00').getTime();
-function tique(){
-  const dif = Math.max(0, ALVO_DATA - Date.now());
-  document.getElementById('d').textContent = Math.floor(dif/86400000);
-  document.getElementById('h').textContent = String(Math.floor(dif%86400000/3600000)).padStart(2,'0');
-  document.getElementById('m').textContent = String(Math.floor(dif%3600000/60000)).padStart(2,'0');
-}
-tique(); setInterval(tique, 1000); // independente do Supabase
+// contagem movida para script independente acima
 
 // --- Token & RSVP ---
 async function carregarConvidado(){
@@ -299,61 +310,76 @@ function renderPresentes(lista){
     const livre = p.valor_alvo === 0;
     const done  = p.estado === 'reservado' || p.estado === 'completo';
     const ang   = Number(p.valor_angariado || 0);
-    const alvo  = Number(p.valor_alvo || 0);
-    const pct   = (!livre && alvo > 0) ? Math.min(100, Math.round(ang/alvo*100)) : 0;
+    const meta  = Number(p.valor_alvo || 0);
+    const pct   = (!livre && meta > 0) ? Math.min(100, Math.round(ang/meta*100)) : 0;
     const foto  = fotoFor(p.nome);
 
-    const el = document.createElement('div');
-    el.style.cssText = 'background:#FFFFFF;border:1px solid #E6D4C1;display:flex;flex-direction:column;'+(done?'opacity:.55;':'');
+    const card = document.createElement('div');
+    card.style.cssText = 'background:#FFFFFF;border:1px solid #E6D4C1;display:flex;flex-direction:column;' + (done ? 'opacity:.55;' : '');
 
     // Imagem
-    let imgHtml = foto
-      ? '<img src="'+foto+'" alt="" style="width:100%;height:110px;object-fit:cover;">'
-      : '<div style="height:110px;display:flex;align-items:center;justify-content:center;font-size:32px;background:#F0E6D8;">🎁</div>';
+    const imgDiv = document.createElement('div');
+    if(foto){
+      const img = document.createElement('img');
+      img.src = foto; img.alt = '';
+      img.style.cssText = 'width:100%;height:110px;object-fit:cover;';
+      imgDiv.appendChild(img);
+    } else {
+      imgDiv.style.cssText = 'height:110px;display:flex;align-items:center;justify-content:center;font-size:32px;background:#F0E6D8;';
+      imgDiv.textContent = '🎁';
+    }
+    card.appendChild(imgDiv);
 
-    // Dashboard de progresso (FIX 2)
-    let dashHtml = '';
+    // Info
+    const info = document.createElement('div');
+    info.style.cssText = 'border-top:1px solid #F0E6D8;padding:14px 12px 0;';
+    info.innerHTML = '<div style="font-family:'Cormorant Garamond',serif;font-size:19px;color:#3D3229;line-height:1.2;">'+esc(p.nome)+'</div>'
+      + '<div style="font-size:13px;color:#C15E3F;margin-top:5px;letter-spacing:.5px;">'+(livre?'Qualquer valor':fmt(meta))+'</div>';
+    card.appendChild(info);
+
+    // Dashboard progresso
+    const dash = document.createElement('div');
     if(!livre){
-      dashHtml = '<div style="padding:10px 12px 0;text-align:left;">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
-        +   '<span style="font-size:11px;color:#8A6D3B;letter-spacing:.5px;">Angariado</span>'
-        +   '<span style="font-size:11px;font-weight:500;color:#C15E3F;">'+pct+'%</span>'
-        + '</div>'
+      dash.style.cssText = 'padding:10px 12px 0;';
+      dash.innerHTML = '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
+        + '<span style="font-size:11px;color:#8A6D3B;">Angariado</span>'
+        + '<span style="font-size:11px;font-weight:500;color:#C15E3F;">'+pct+'%</span></div>'
         + '<div style="height:5px;background:#F0E6D8;border-radius:3px;overflow:hidden;">'
-        +   '<div style="height:100%;width:'+pct+'%;background:#C15E3F;border-radius:3px;transition:width .5s;"></div>'
-        + '</div>'
-        + '<div style="font-size:11px;color:#6B5D4F;margin-top:4px;">'+fmt(ang)+' de '+fmt(alvo)+'</div>'
-        + '</div>';
+        + '<div style="height:100%;width:'+pct+'%;background:#C15E3F;border-radius:3px;"></div></div>'
+        + '<div style="font-size:11px;color:#6B5D4F;margin-top:4px;">'+fmt(ang)+' de '+fmt(meta)+'</div>';
     } else {
-      // Lua de mel: mostra total angariado
-      dashHtml = '<div style="padding:10px 12px 0;text-align:center;">'
-        + '<div style="font-size:11px;color:#8A6D3B;">Total recebido: <b style="color:#C15E3F;">'+fmt(ang)+'</b></div>'
-        + '</div>';
+      dash.style.cssText = 'padding:10px 12px 0;text-align:center;';
+      dash.innerHTML = '<div style="font-size:11px;color:#8A6D3B;">Total recebido: <b style="color:#C15E3F;">'+fmt(ang)+'</b></div>';
     }
+    card.appendChild(dash);
 
-    // Botões ou estado
-    let actionsHtml = '';
+    // Acções ou estado
+    const acts = document.createElement('div');
     if(done){
-      actionsHtml = '<div style="padding:8px 12px 14px;font-size:11px;color:#8A6D3B;text-align:center;">'
-        +(p.estado==='completo'?'Totalmente oferecido 🤍':'Reservado por '+esc(p.reservado_por||''))+'</div>';
+      acts.style.cssText = 'padding:8px 12px 14px;font-size:11px;color:#8A6D3B;text-align:center;';
+      acts.textContent = p.estado==='completo' ? 'Totalmente oferecido 🤍' : 'Reservado por ' + esc(p.reservado_por||'');
     } else {
-      actionsHtml = '<div style="display:flex;gap:6px;padding:10px 12px 14px;flex-wrap:wrap;">'
-        +'<button onclick='abrirContribuir('+JSON.stringify(p.id)+','+JSON.stringify(p.nome)+')' style="flex:1;font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:9px 4px;border:none;background:#B08D3E;color:#fff;cursor:pointer;font-family:'Jost',sans-serif;">Contribuir</button>'
-        +(!livre?'<button onclick='abrirReservar('+JSON.stringify(p.id)+','+JSON.stringify(p.nome)+')' style="flex:1;font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:9px 4px;border:1px solid #8A6D3B;background:none;color:#8A6D3B;cursor:pointer;font-family:'Jost',sans-serif;">Oferecer inteiro</button>':'')
-        +'</div>';
+      acts.style.cssText = 'display:flex;gap:6px;padding:10px 12px 14px;flex-wrap:wrap;';
+
+      const btnC = document.createElement('button');
+      btnC.textContent = 'Contribuir';
+      btnC.style.cssText = 'flex:1;font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:9px 4px;border:none;background:#B08D3E;color:#fff;cursor:pointer;font-family:Jost,sans-serif;';
+      btnC.addEventListener('click', function(){ abrirContribuir(p.id, p.nome); });
+      acts.appendChild(btnC);
+
+      if(!livre){
+        const btnR = document.createElement('button');
+        btnR.textContent = 'Oferecer inteiro';
+        btnR.style.cssText = 'flex:1;font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:9px 4px;border:1px solid #8A6D3B;background:none;color:#8A6D3B;cursor:pointer;font-family:Jost,sans-serif;';
+        btnR.addEventListener('click', function(){ abrirReservar(p.id, p.nome); });
+        acts.appendChild(btnR);
+      }
     }
-
-    el.innerHTML = imgHtml
-      + '<div style="border-top:1px solid #F0E6D8;padding:14px 12px 0;">'
-      +   '<div style="font-family:'Cormorant Garamond',serif;font-size:19px;color:#3D3229;line-height:1.2;">'+esc(p.nome)+'</div>'
-      +   '<div style="font-size:13px;color:#C15E3F;margin-top:5px;letter-spacing:.5px;">'+(livre?'Qualquer valor':fmt(alvo))+'</div>'
-      + '</div>'
-      + dashHtml
-      + actionsHtml;
-
-    box.appendChild(el);
+    card.appendChild(acts);
+    box.appendChild(card);
   });
 }
+
 
 function abrirContribuir(id, nome){
   modalPresente = id;
